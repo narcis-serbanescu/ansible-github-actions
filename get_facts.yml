@@ -1,0 +1,11 @@
+---
+- name: Get facts
+  hosts: localhost
+  ignore_errors: true
+
+  tasks:
+    - name: Get facts of {{ ansible_hostname }}
+      debug:
+        var: hostvars[inventory_hostname]
+...
+
