@@ -1,3 +1,4 @@
+---
 # https://spacelift.io/blog/github-actions-ansible
 #
 name: Deploy with Ansible
@@ -12,11 +13,12 @@ jobs:
   deploy:
     name: Deploy Ansible Playbook
     runs-on: ubuntu-latest
-    environment: production
+    # environment: production
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set up SSH
+
+      - name: Set up SSH # ssh-key added as SSH_PRIVATE_KEY in repo's secrets
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key.pem
           chmod 600 private_key.pem
@@ -29,8 +31,9 @@ jobs:
 
       - name: Run Ansible Playbook
         env:
-          ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
+          ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }} # ubuntu username added in repo's secrets
           ANSIBLE_HOST_KEY_CHECKING: False
         run: |
           ansible-playbook get_facts.yml --private-key private_key.pem -u ${{ secrets.ANSIBLE_USER }}
           # ansible-playbook -i inventory/hosts.ini playbooks/deploy_web_server.yml --private-key private_key.pem -u ${{ secrets.ANSIBLE_USER }}
+...
