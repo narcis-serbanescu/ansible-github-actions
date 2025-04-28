@@ -1,2 +1,2 @@
 # ansible-github-actions
-Installing Ansible and running Playbooks on git runners
+Installing Ansible and running Playbooks on Git runners by using Git Actions Workflows    
