@@ -28,26 +28,23 @@ jobs:
       run: |
         # Fetch all tags from remote
         git fetch --tags
-
+        
         # Get the highest tag matching release/vX.X.X pattern
         LATEST_TAG=$(git tag -l "release/v${{ steps.get_version.outputs.branch_version }}.*" --sort=-v:refname | head -n 1)
-
+        
         if [ -z "$LATEST_TAG" ]; then
           # No existing tag for this version, start with .0
-          NEW_TAG="release/v${{ steps.get_version.outputs.branch_version }}.0"
-          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          NEW_TAG="v${{ steps.get_version.outputs.branch_version }}.0"  # Removed duplicate "release/" prefix
+          echo "new_tag=release/$NEW_TAG" >> $GITHUB_OUTPUT  # Add prefix here
           echo "is_new=true" >> $GITHUB_OUTPUT
         else
           # Extract the last number and increment
           LAST_NUMBER=$(echo $LATEST_TAG | awk -F. '{print $NF}')
           NEW_NUMBER=$((LAST_NUMBER + 1))
-          NEW_TAG=$(echo $LATEST_TAG | sed "s/\.[0-9]*$/.${NEW_NUMBER}/")
-          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          NEW_TAG=$(echo $LATEST_TAG | sed "s/\.[0-9]*$/.${NEW_NUMBER}/" | sed 's/release\///')  # Remove prefix before incrementing
+          echo "new_tag=release/$NEW_TAG" >> $GITHUB_OUTPUT  # Add prefix here
           echo "is_new=false" >> $GITHUB_OUTPUT
         fi
-
-        echo "Latest tag: $LATEST_TAG"
-        echo "New tag will be: $NEW_TAG"
 
     - name: Create and push new tag
       if: steps.get_latest_tag.outputs.new_tag
