@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'release/v*'  # Triggers on pushes to branches matching releases/vX.X pattern
+  workflow_dispatch: # Allow manual triggering
 
 jobs:
   create-release-tag:
