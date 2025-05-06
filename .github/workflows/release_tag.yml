@@ -1,0 +1,40 @@
+---
+name: Create Release Tag
+
+on:
+  push:
+    branches:
+      - 'release/**'
+      - 'releases/v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed to get all history for tags
+
+      - name: Get version from branch name
+        id: get_version
+        run: |
+          # Extract version from branch name (e.g., releases/v1.0.0 -> v1.0.0)
+          if [[ $GITHUB_REF == refs/heads/releases/v* ]]; then
+            VERSION=${GITHUB_REF#refs/heads/releases/}
+          else
+            VERSION=${GITHUB_REF#refs/heads/release/}
+          fi
+          echo "Extracted version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          release_name: Release ${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+...
