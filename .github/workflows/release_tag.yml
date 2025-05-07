@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'release/v*'
+  workflow_dispatch:
 
 jobs:
   create-release-tag:
