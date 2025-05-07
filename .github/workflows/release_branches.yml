@@ -25,6 +25,8 @@ jobs:
       - name: Get current version
         id: version
         run: |
+          # Fetch all remote branches
+          git fetch --all
           # Check for existing release branches and determine next version
           LATEST_RELEASE=$(git branch -r | grep 'origin/release/v' | sed 's/origin\/release\/v//' | sort -V | tail -n 1 | xargs)
 
