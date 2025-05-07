@@ -1,0 +1,67 @@
+---
+name: Create Incremental Release Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type of release (major/minor)'
+        required: true
+        default: 'minor'
+        type: choice
+        options:
+          - major
+          - minor
+
+jobs:
+  create-release-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get current version
+        id: version
+        run: |
+          # Check for existing release branches and determine next version
+          LATEST_RELEASE=$(git branch -r | grep 'origin/release/v' | sed 's/origin\/release\/v//' | sort -V | tail -n 1 | xargs)
+
+          if [ -z "$LATEST_RELEASE" ]; then
+            echo "No existing release branches found, starting with v1.0"
+            echo "new_version=1.0" >> $GITHUB_OUTPUT
+          else
+            IFS='.' read -r major minor <<< "$LATEST_RELEASE"
+
+            if [ "${{ github.event.inputs.release_type }}" = "major" ]; then
+              new_major=$((major + 1))
+              new_version="${new_major}.0"
+            else
+              new_minor=$((minor + 1))
+              new_version="${major}.${new_minor}"
+            fi
+
+            echo "new_version=${new_version}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create release branch
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          RELEASE_BRANCH="release/v${{ steps.version.outputs.new_version }}"
+          git checkout -b $RELEASE_BRANCH develop
+          git push origin $RELEASE_BRANCH
+          echo "Created branch: $RELEASE_BRANCH"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: "Release v${{ steps.version.outputs.new_version }}"
+          body: "This PR prepares the release v${{ steps.version.outputs.new_version }} branch"
+          base: main
+          branch: "release/v${{ steps.version.outputs.new_version }}"
+          draft: false
+          labels: "release"
+...
