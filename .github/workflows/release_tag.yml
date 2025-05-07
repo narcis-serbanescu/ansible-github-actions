@@ -1,0 +1,66 @@
+---
+name: Auto Release Tagging
+
+on:
+  push:
+    branches:
+      - 'release/v*'
+  workflow_dispatch:
+
+jobs:
+  create-release-tag:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get release branch version
+      id: get_version
+      run: |
+        # Extract base version from branch name (e.g., releases/v1.0 -> v1.0)
+        BRANCH_VERSION=$(echo ${{ github.ref_name }} | sed 's/releases\///')
+        echo "branch_version=$BRANCH_VERSION" >> $GITHUB_OUTPUT
+
+    - name: Get latest tag
+      id: get_latest_tag
+      run: |
+        # Fetch all tags from remote
+        git fetch --tags
+
+        # Get the highest tag matching release/vX.X.X pattern
+        LATEST_TAG=$(git tag -l "${{ steps.get_version.outputs.branch_version }}.*" --sort=-v:refname | head -n 1)
+
+        if [ -z "$LATEST_TAG" ]; then
+          # No existing tag for this version, start with .0
+          NEW_TAG="${{ steps.get_version.outputs.branch_version }}.0"
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "is_new=true" >> $GITHUB_OUTPUT
+        else
+          # Remove the release/ prefix before processing
+          CLEAN_TAG=$(echo $LATEST_TAG | sed 's|^release/||')
+          # Extract the last number and increment
+          LAST_NUMBER=$(echo $CLEAN_TAG | awk -F. '{print $NF}')
+          NEW_NUMBER=$((LAST_NUMBER + 1))
+          # Reconstruct the new tag
+          NEW_TAG="release/$(echo $CLEAN_TAG | sed "s/\.[0-9]*$/.${NEW_NUMBER}/")"
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "is_new=false" >> $GITHUB_OUTPUT
+        fi
+
+        echo "Latest tag: $LATEST_TAG"
+        echo "New tag will be: $NEW_TAG"
+
+    - name: Create and push new tag
+      if: steps.get_latest_tag.outputs.new_tag
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+
+        git tag ${{ steps.get_latest_tag.outputs.new_tag }}
+        git push origin ${{ steps.get_latest_tag.outputs.new_tag }}
+
+        echo "Created and pushed new tag: ${{ steps.get_latest_tag.outputs.new_tag }}"
+...
