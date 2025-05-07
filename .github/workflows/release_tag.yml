@@ -40,8 +40,7 @@ jobs:
           echo "is_new=true" >> $GITHUB_OUTPUT
         else
           # Remove the release/ prefix before processing
-          # CLEAN_TAG=$(echo $LATEST_TAG | sed 's|^release/||')
-          CLEAN_TAG=$(echo $LATEST_TAG)
+          CLEAN_TAG=$(echo $LATEST_TAG | sed 's|^release/||')
           # Extract the last number and increment
           LAST_NUMBER=$(echo $CLEAN_TAG | awk -F. '{print $NF}')
           NEW_NUMBER=$((LAST_NUMBER + 1))
