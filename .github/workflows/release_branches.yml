@@ -1,6 +1,5 @@
 ---
 name: Create Incremental Release Branch
-
 on:
   workflow_dispatch:
     inputs:
